@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive AWS Well-Architected Framework</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutral with Orange and Blue Accents -->
+    <!-- Application Structure Plan: A Single-Page Application (SPA) with a fixed sidebar for primary navigation between framework pillars. This dashboard-style layout allows users to non-linearly explore the content, which is more intuitive for a reference guide than a linear document. Clicking a pillar instantly displays its principles, services, and labs in the main content area. This structure was chosen to make the dense information easily digestible and accessible, allowing users to jump to sections of interest without losing context, which is ideal for both learning and quick reference. -->
+    <!-- Visualization & Content Choices: Report Info: Hierarchical text (Pillars -> Principles -> Details). Goal: Inform/Organize. Viz/Presentation: Interactive accordions for principles to manage information density. Modals for service details to provide deep-dives without navigating away. HTML/CSS-based diagrams for architectures to maintain interactivity and avoid static images. Justification: This approach turns a static document into an engaging, explorable tool. It respects the textual nature of the content while adding interactive layers for better user experience. Library/Method: Vanilla JS for all interactions. CONFIRMATION: NO SVG/Mermaid used. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .sidebar-icon {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .nav-link {
+            transition: all 0.2s ease-in-out;
+        }
+        .nav-link.active, .nav-link:hover {
+            background-color: #ffe0b2; /* Light orange for active/hover background */
+            color: #f66f01; /* Orange for active/hover text */
+            transform: translateX(4px);
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+            padding: 0 1rem;
+        }
+        .accordion-content.open {
+            max-height: 1000px; /* Adjust as needed */
+            padding: 1rem 1rem;
+        }
+        .modal-backdrop {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-content {
+            transition: transform 0.3s ease-in-out;
+        }
+        .architecture-diagram {
+            border: 1px solid #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            background-color: #ffffff;
+        }
+        .arch-box {
+            border: 1px solid #cbd5e1;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            text-align: center;
+            background-color: #f1f5f9;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .arch-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 2rem;
+            margin: 0.5rem 0;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* Max width for charts */
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px; /* Base height */
+            max-height: 400px; /* Max height */
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="w-64 bg-white shadow-md fixed lg:relative h-full lg:h-auto lg:min-h-screen z-20 -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
+            <div class="p-4">
+                <h1 class="text-2xl font-bold text-[#f66f01]">Well-Architected</h1>
+                <p class="text-sm text-slate-500">Interactive Guide</p>
+            </div>
+            <nav class="mt-4 p-2">
+                <a href="#introduction" class="nav-link flex items-center p-3 rounded-lg font-medium text-slate-700 active">
+                    <span class="w-3 h-3 rounded-full bg-slate-500 mr-3"></span>
+                    Introduction
+                </a>
+                <h3 class="px-3 pt-4 pb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Pillars</h3>
+                <a href="#operational-excellence" class="nav-link flex items-center p-3 rounded-lg font-medium text-slate-700">
+                    <span class="w-3 h-3 rounded-full bg-[#f66f01] mr-3"></span>
+                    Operational Excellence
+                </a>
+                <a href="#security" class="nav-link flex items-center p-3 rounded-lg font-medium text-slate-700">
+                    <span class="w-3 h-3 rounded-full bg-[#156ce0] mr-3"></span>
+                    Security
+                </a>
+                <a href="#reliability" class="nav-link flex items-center p-3 rounded-lg font-medium text-slate-700">
+                     <span class="w-3 h-3 rounded-full bg-[#f66f01] mr-3"></span>
+                    Reliability
+                </a>
+                <a href="#performance-efficiency" class="nav-link flex items-center p-3 rounded-lg font-medium text-slate-700">
+                    <span class="w-3 h-3 rounded-full bg-[#156ce0] mr-3"></span>
+                    Performance Efficiency
+                </a>
+                <a href="#cost-optimization" class="nav-link flex items-center p-3 rounded-lg font-medium text-slate-700">
+                    <span class="w-3 h-3 rounded-full bg-[#f66f01] mr-3"></span>
+                    Cost Optimization
+                </a>
+                <a href="#sustainability" class="nav-link flex items-center p-3 rounded-lg font-medium text-slate-700">
+                    <span class="w-3 h-3 rounded-full bg-[#156ce0] mr-3"></span>
+                    Sustainability
+                </a>
+                <h3 class="px-3 pt-4 pb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Assessment</h3>
+                <a href="#quiz" class="nav-link flex items-center p-3 rounded-lg font-medium text-slate-700">
+                    <span class="w-3 h-3 rounded-full bg-slate-500 mr-3"></span>
+                    Quiz
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 sm:p-6 lg:p-10 transition-all duration-300">
+             <button id="menu-button" class="lg:hidden p-2 mb-4 rounded-md bg-white shadow-md text-slate-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+             </button>
+
+            <!-- Introduction Section -->
+            <section id="introduction" class="content-section active">
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h2 class="text-4xl font-bold mb-4 text-[#f66f01]">AWS Well-Architected Framework: Interactive Guide</h2>
+                    <p class="text-lg text-slate-600 mb-6">The AWS Well-Architected Framework is a set of best practices and guiding principles designed to help cloud architects build secure, high-performing, resilient, and efficient infrastructure for their applications on AWS. It provides a consistent approach for customers and partners to evaluate architectures and implement designs that will scale with their application needs over time.</p>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-orange-50 p-6 rounded-lg">
+                            <h3 class="font-semibold text-xl mb-2 text-[#f66f01]">Aim of the Framework</h3>
+                            <p class="text-slate-700 mb-4">The primary aim is to enable organizations to make informed decisions about their cloud architectures. Applying the framework helps to:</p>
+                            <ul class="list-disc list-inside space-y-2 text-slate-600">
+                                <li><strong>Build and deploy faster:</strong> Streamline development and deployment processes.</li>
+                                <li><strong>Lower or mitigate risks:</strong> Proactively identify and address potential issues.</li>
+                                <li><strong>Make informed decisions:</strong> Base architectural choices on proven best practices.</li>
+                                <li><strong>Learn AWS best practices:</strong> Understand and adopt the most effective ways to design and operate in the cloud.</li>
+                            </ul>
+                        </div>
+                        <div class="bg-blue-50 p-6 rounded-lg">
+                            <h3 class="font-semibold text-xl mb-2 text-[#156ce0]">General Design Principles</h3>
+                             <p class="text-slate-700 mb-4">The framework is built upon several general design principles applicable across all pillars:</p>
+                            <ul class="list-disc list-inside space-y-2 text-slate-600">
+                                <li>Stop guessing your capacity needs.</li>
+                                <li>Test systems at production scale.</li>
+                                <li>Automate to make architectural experimentation easier.</li>
+                                <li>Allow for evolutionary architectures.</li>
+                                <li>Drive architectures using data.</li>
+                                <li>Improve through game days.</li>
+                            </ul>
+                        </div>
+                    </div>
+                     <div class="mt-8 bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-2xl font-bold mb-4 text-[#156ce0]">AWS Well-Architected Tool Features</h3>
+                        <p class="text-slate-600 mb-4">The AWS Well-Architected Tool is a service that helps review the state of workloads against the AWS Well-Architected Framework and apply best practices. It offers several powerful features:</p>
+                        <ul class="list-disc list-inside space-y-2 text-slate-600 mb-4">
+                            <li><strong>Lens Catalog:</strong> Provides access to expert-authored review lenses from AWS, extending beyond the core framework's six pillars. These lenses offer specialized guidance for specific technologies, industries, or use cases. They are continuously refreshed with the latest technology and industry-specific best practices, allowing deep dives into areas critical to business and exploration of best practices others in the industry are using.</li>
+                            <li><strong>Customized Reviews:</strong> Supports highly customized reviews through Custom Lenses (adding own pillars, questions, best practices), Profiles (pre-defining business goals), and Review Templates (pre-filling answers for common best practices).</li>
+                            <li><strong>Improved Collaboration:</strong> Facilitates teamwork by allowing easy sharing of workloads and custom lenses with up to 300 individual IAM users or accounts, or across an entire organization via integration with AWS Organizations.</li>
+                            <li><strong>Easier Discovery:</strong> Integrates with other AWS services like AWS Trusted Advisor and AWS Service Catalog AppRegistry, making it simpler to discover the necessary information to answer review questions and accelerate the review process.</li>
+                            <li><strong>In-workflow Best Practices:</strong> Provides APIs that allow extending AWS Well-Architected functionality, best practices, measurements, and learnings directly into existing architecture governance processes, applications, and workflows.</li>
+                            <li><strong>Support for Regulatory and Compliance Needs:</strong> Available in the GovCloud Region (US) and compliant with the Federal Risk and Authorization Management Program (FedRAMP), making it suitable for customers and partners with stringent regulatory and compliance requirements.</li>
+                        </ul>
+                        <p class="text-slate-600">For more detailed information and comprehensive guidance on using the AWS Well-Architected Tool, refer to the official user guide: <a href="https://docs.aws.amazon.com/pdfs/wellarchitected/latest/userguide/wellarchitected-ug.pdf" target="_blank" class="text-[#156ce0] hover:underline">AWS Well-Architected Tool User Guide (PDF)</a></p>
+                    </div>
+                     <div class="mt-8 bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-2xl font-bold mb-4 text-[#f66f01]">Tutorial: Document an AWS Well-Architected Tool Workload</h3>
+                        <p class="text-slate-600 mb-4">The "Tutorial: Document an AWS Well-Architected Tool workload" in the AWS Well-Architected Tool User Guide (pages 22-29) guides users through the process of evaluating an application's architecture against AWS best practices.</p>
+                        <h4 class="font-semibold text-xl mb-2 text-slate-700">Goals of the Tutorial:</h4>
+                        <p class="text-slate-600 mb-4">The primary goal is to teach how to:</p>
+                        <ul class="list-disc list-inside space-y-2 text-slate-600 mb-4">
+                            <li><strong>Define a workload:</strong> Set up a representation of an application within the AWS Well-Architected Tool, providing essential details like name, description, and environment.</li>
+                            <li><strong>Document the workload's current state:</strong> Answer a series of questions based on the chosen Well-Architected Lens (e.g., the AWS Well-Architected Framework Lens) by indicating which best practices are currently being followed.</li>
+                            <li><strong>Identify and review risks:</strong> Understand how the tool identifies High Risk Issues (HRIs) and Medium Risk Issues (MRIs) based on the provided answers.</li>
+                            <li><strong>Generate an improvement plan:</strong> Learn how the tool provides actionable recommendations to mitigate identified risks.</li>
+                            <li><strong>Track progress:</strong> Understand how to save milestones to capture the workload's state at different points in time and measure architectural improvements.</li>
+                        </ul>
+                        <h4 class="font-semibold text-xl mb-2 text-slate-700">Results of Completing the Tutorial:</h4>
+                        <p class="text-slate-600 mb-4">Upon completing this tutorial, users will have:</p>
+                        <ul class="list-disc list-inside space-y-2 text-slate-600">
+                            <li>A <strong>defined workload</strong> in the AWS Well-Architected Tool.</li>
+                            <li>A <strong>documented architectural state</strong> for their application, highlighting adherence to best practices.</li>
+                            <li>A clear understanding of <strong>identified high and medium risks</strong> within their architecture.</li>
+                            <li>An <strong>improvement plan</strong> with recommended actions to enhance the workload's operational excellence, security, reliability, performance efficiency, cost optimization, and sustainability.</li>
+                            <li>The ability to <strong>save milestones</strong> to track the evolution and improvement of their workload over time.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Pillar Sections: Populated by JS -->
+            <section id="operational-excellence" class="content-section"></section>
+            <section id="security" class="content-section"></section>
+            <section id="reliability" class="content-section"></section>
+            <section id="performance-efficiency" class="content-section"></section>
+            <section id="cost-optimization" class="content-section"></section>
+            <section id="sustainability" class="content-section"></section>
+
+            <!-- Quiz Section -->
+            <section id="quiz" class="content-section">
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <h2 class="text-4xl font-bold mb-6 text-[#f66f01]">Knowledge Check Quiz</h2>
+                    <p class="text-lg text-slate-600 mb-6">Test your understanding of the AWS Well-Architected Framework pillars and concepts with this short quiz!</p>
+                    
+                    <div id="quiz-container">
+                        <!-- Quiz questions will be rendered here -->
+                    </div>
+
+                    <div id="quiz-results" class="mt-8 p-6 rounded-lg bg-slate-50 hidden">
+                        <h3 class="text-2xl font-bold mb-4 text-slate-800">Your Results</h3>
+                        <p id="score-display" class="text-xl font-semibold mb-4"></p>
+                        <div id="feedback-chart-container" class="chart-container">
+                            <canvas id="feedbackChart"></canvas>
+                        </div>
+                        <button id="retake-quiz-button" class="mt-6 px-6 py-3 bg-[#156ce0] text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition-colors">Retake Quiz</button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Modal Structure -->
+    <div id="service-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden modal-backdrop">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto modal-content transform scale-95">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="modal-title" class="text-2xl font-bold text-[#f66f01]"></h3>
+                    <button id="modal-close-button" class="text-slate-500 hover:text-slate-800">&times;</button>
+                </div>
+                <div id="modal-body" class="prose max-w-none text-slate-600"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navLinks = document.querySelectorAll('.nav-link');
+            const contentSections = document.querySelectorAll('.content-section');
+            const menuButton = document.getElementById('menu-button');
+            const sidebar = document.getElementById('sidebar');
+
+            const modal = document.getElementById('service-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            const modalCloseButton = document.getElementById('modal-close-button');
+
+            const quizContainer = document.getElementById('quiz-container');
+            const quizResults = document.getElementById('quiz-results');
+            const scoreDisplay = document.getElementById('score-display');
+            const retakeQuizButton = document.getElementById('retake-quiz-button');
+            let currentQuizQuestionIndex = 0;
+            let correctAnswersCount = 0;
+            let feedbackChartInstance = null;
+
+            const data = {
+                "operational-excellence": {
+                    title: "Operational Excellence",
+                    description: "The Operational Excellence pillar covers how an organization supports business objectives. This includes an organization’s ability to run workloads effectively, gain insight into their operations, and continuously improve processes and procedures to deliver business value.",
+                    principles: [
+                        { title: "Perform operations as code", content: "Automate operational procedures by defining them as code. This ensures consistency, reduces human error, and enables faster execution and easier auditing of changes. Examples include using AWS Systems Manager Documents for patching and configuration management." },
+                        { title: "Make frequent, small, reversible changes", content: "Implement changes in small, incremental steps that can be easily rolled back if issues arise. This reduces the blast radius of potential failures and allows for rapid iteration and learning. Continuous integration and continuous delivery (CI/CD) pipelines facilitate this principle." },
+                        { title: "Refine operations procedures frequently", content: "Continuously review and update operational procedures based on lessons learned from incidents, new technologies, and evolving business requirements. This ensures that procedures remain relevant and effective. Leveraging tools like AWS Systems Manager Session Manager for secure instance access can improve operational efficiency." },
+                        { title: "Anticipate failures", content: "Design workloads with the expectation that failures will occur. Implement mechanisms to detect, respond to, and recover from anticipated failures automatically. This includes designing for high availability across multiple Availability Zones and using services like Application Load Balancers and Auto Scaling groups." },
+                        { title: "Learn from all operational failures", content: "Establish a culture of learning from every operational incident, regardless of its severity. Conduct post-mortems to identify root causes, implement corrective actions, and share lessons learned across teams to prevent recurrence and improve overall resilience." }
+                    ],
+                    services: [
+                         { name: "AWS Systems Manager (SSM)", details: "<strong>Description:</strong> AWS Systems Manager provides a unified interface to view operational data from multiple AWS services and allows you to automate operational tasks across your AWS resources. It helps you maintain security and compliance, and manage your infrastructure at scale.<br><strong>Use Cases:</strong> Automated Patching, Configuration Management, Remote Command Execution, Resource Grouping.<br><strong>Example:</strong> Using SSM Patch Manager to ensure all web servers are updated with the latest security patches during a defined maintenance window." },
+                         { name: "CI/CD Services (CodePipeline, CodeBuild, CodeDeploy)", details: "<strong>Description:</strong> These services form a robust Continuous Integration/Continuous Delivery (CI/CD) pipeline on AWS. CodePipeline automates the release process, CodeBuild compiles source code and runs tests, and CodeDeploy automates code deployments.<br><strong>Use Cases:</strong> Automated Software Releases, Rollback Capabilities, Consistent Deployments.<br><strong>Example:</strong> A developer commits code, CodePipeline detects the change, CodeBuild compiles and tests, and CodeDeploy deploys the new version automatically." },
+                         { name: "Amazon CloudWatch", details: "<strong>Description:</strong> Amazon CloudWatch is a monitoring and observability service that provides data and actionable insights to monitor your applications, respond to system-wide performance changes, and optimize resource utilization.<br><strong>Use Cases:</strong> Application Monitoring, Alarming and Notifications, Log Analytics, Custom Dashboards.<br><strong>Example:</strong> Setting up a CloudWatch alarm to notify the operations team if CPU utilization exceeds 80% for five consecutive minutes." }
+                    ],
+                    lab: {
+                        title: "Lab 1: Operational Excellence",
+                        description: "As a Solutions Architect working for AnyCompany, a retail business, the main application, a product catalog web application, has recently been migrated to the AWS Cloud from the on-premises environment. While functional, the business's growth necessitates an architecture built on best practices. As part of the AnyCompany’s Well-Architected practitioners team, the mission is to enhance this architecture to meet new performance requirements, mitigate risks, and optimize costs, with automation as a fundamental part of the solution.",
+                        tasks: [
+                            "Create Tags: Implement a tagging strategy for Amazon EC2 instances.",
+                            "Create a Resource Group: Organize resources for centralized management.",
+                            "Create an IAM Instance Profile for Systems Manager: Securely grant permissions to EC2 instances.",
+                            "Install SSM and CloudWatch Agents: Enable remote management and monitoring.",
+                            "Validate Metrics and Logs: Verify that custom metrics and logs are being collected in CloudWatch."
+                        ],
+                        architecture: {
+                            initial: `
+                                <h4 class="font-semibold text-lg mb-2 text-slate-700">Initial Architecture</h4>
+                                <div class="grid grid-cols-1 gap-4 text-sm">
+                                    <div class="arch-box">Internet</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">Internet Gateway</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">VPC</div>
+                                    <div class="grid grid-cols-2 gap-4 mt-4">
+                                        <div class="flex flex-col items-center">
+                                            <div class="arch-box">Public Subnet</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Web App Instance</div>
+                                        </div>
+                                        <div class="flex flex-col items-center">
+                                            <div class="arch-box">Private Subnet</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Database Instance</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            target: `
+                                <h4 class="font-semibold text-lg mb-2 text-slate-700">Target Architecture</h4>
+                                <div class="grid grid-cols-1 gap-4 text-sm">
+                                    <div class="arch-box">Internet</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">Internet Gateway</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">Application Load Balancer (Public Subnets AZ1, AZ2)</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">VPC (2 Availability Zones)</div>
+                                    <div class="grid grid-cols-2 gap-4 mt-4">
+                                        <div class="flex flex-col items-center">
+                                            <div class="arch-box">AZ1: Public, Private, DB Private Subnets</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Web Server (Auto Scaling Group)</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Amazon RDS Instance</div>
+                                        </div>
+                                        <div class="flex flex-col items-center">
+                                            <div class="arch-box">AZ2: Public, Private, DB Private Subnets</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Web Server (Auto Scaling Group)</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Amazon RDS Instance</div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 p-2 border border-slate-300 rounded bg-slate-100 text-xs text-slate-600">Supporting Services: CloudWatch, CloudTrail, CloudFormation, Config, Systems Manager, IAM, Secrets Manager</div>
+                                </div>
+                            `
+                        }
+                    }
+                },
+                "security": {
+                    title: "Security",
+                    description: "The Security pillar considers how cloud technologies are used to protect data, systems, and assets and improve the security posture. Security is 'job zero' at AWS.",
+                     principles: [
+                        { title: "Implement a strong identity foundation", content: "Establish robust control over who can access what, and under what conditions. Use strong authentication, granular authorization, and centralized identity management. Best practice is to use an AWS account strategy with an account per function." },
+                        { title: "Maintain traceability", content: "Ensure all actions and changes are logged, monitored, and auditable. This provides visibility into security events. Best practice is continuous automated auditing using services like AWS CloudTrail and AWS Config." },
+                        { title: "Apply security at all layers", content: "Implement security controls at every layer of your architecture, from the edge network to individual application components and data. This includes network segmentation and traffic control using services like AWS WAF and Security Groups." },
+                        { title: "Automate security best practices", content: "Integrate security controls into your automated build and deployment pipelines (DevSecOps). Automate responses to security events using services like Amazon EventBridge and AWS Lambda." },
+                        { title: "Protect data in transit and at rest", content: "Implement encryption for all data, both when it's moving across networks and when it's stored. Use services like AWS KMS, AWS Certificate Manager, and Amazon Macie." },
+                        { title: "Keep people away from data", content: "Design systems to minimize direct human access to sensitive data. Implement least privilege access and use automated tools for data processing." },
+                        { title: "Prepare for security events", content: "Develop and regularly test incident response plans to effectively handle security incidents. This includes defining clear roles, communication strategies, and automated response actions." }
+                    ],
+                    services: [
+                        { name: "AWS Security Hub", details: "<strong>Description:</strong> AWS Security Hub provides a comprehensive view of your security state in AWS and helps you check compliance. It collects security data from across AWS accounts and services.<br><strong>Use Cases:</strong> Centralized security posture management, automated security checks, and finding aggregation." },
+                        { name: "Amazon GuardDuty", details: "<strong>Description:</strong> A threat detection service that continuously monitors for malicious activity and unauthorized behavior. It uses machine learning and integrated threat intelligence.<br><strong>Use Cases:</strong> Detecting compromised EC2 instances, unusual API calls, or suspicious network activity." },
+                        { name: "Amazon Inspector", details: "<strong>Description:</strong> An automated security assessment service that helps improve the security and compliance of applications. It scans for software vulnerabilities and unintended network exposure.<br><strong>Use Cases:</strong> Identifying CVEs in EC2 instances and container images." },
+                        { name: "AWS WAF", details: "<strong>Description:</strong> A web application firewall that helps protect your web applications from common web exploits.<br><strong>Use Cases:</strong> Protecting against SQL injection, cross-site scripting (XSS), and blocking malicious IP addresses." },
+                        { name: "AWS Key Management Service (KMS)", details: "<strong>Description:</strong> Makes it easy to create and manage cryptographic keys and control their use across a wide range of AWS services.<br><strong>Use Cases:</strong> Encrypting data in S3, EBS volumes, and RDS databases." },
+                    ],
+                    lab: {
+                        title: "Lab 3: Security",
+                        description: "The security pillar encompasses the ability to protect data, systems, and assets to take advantage of cloud technologies to improve security. Security is a top priority. According to the AWS Well-Architected Framework Review, cloud-native controls should be implemented to prevent and detect security issues. Modify the architecture provided in the lab to enable granular logging of API calls made to the environment and secure network traffic by narrowing the scope of traffic allowed by security groups and network access control lists (network ACLs).",
+                        tasks: [
+                            "Enable Granular Logging: Configure AWS services to capture detailed logs of API calls.",
+                            "Improve Granular Control of Communication: Refine access controls to ensure that communication between components is tightly controlled and adheres to the principle of least privilege.",
+                            "Improve Granular Network-Based Controls: Implement more restrictive security group rules and network ACLs to limit network traffic to only what is absolutely necessary for the application's functionality.",
+                            "Evaluate Detailed Logging: Review and analyze the generated logs to confirm that the desired level of detail is being captured and that potential security issues can be identified."
+                        ],
+                        architecture: {
+                            initial: `
+                                <h4 class="font-semibold text-lg mb-2 text-slate-700">Initial Architecture (Same as Lab 1/2 Initial)</h4>
+                                <div class="grid grid-cols-1 gap-4 text-sm">
+                                    <div class="arch-box">Internet</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">Internet Gateway</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">VPC</div>
+                                    <div class="grid grid-cols-2 gap-4 mt-4">
+                                        <div class="flex flex-col items-center">
+                                            <div class="arch-box">Public Subnet</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Web App Instance</div>
+                                        </div>
+                                        <div class="flex flex-col items-center">
+                                            <div class="arch-box">Private Subnet</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Database Instance</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            target: `
+                                <h4 class="font-semibold text-lg mb-2 text-slate-700">Target Architecture</h4>
+                                <div class="grid grid-cols-1 gap-4 text-sm">
+                                    <div class="arch-box">Internet</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">Internet Gateway</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">Application Load Balancer (Public Subnets AZ1, AZ2)</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">VPC (2 Availability Zones)</div>
+                                    <div class="grid grid-cols-2 gap-4 mt-4">
+                                        <div class="flex flex-col items-center">
+                                            <div class="arch-box">AZ1: Public, Private, DB Private Subnets</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Web Server (Auto Scaling Group)</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Amazon RDS Instance</div>
+                                        </div>
+                                        <div class="flex flex-col items-center">
+                                            <div class="arch-box">AZ2: Public, Private, DB Private Subnets</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Web Server (Auto Scaling Group)</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Amazon RDS Instance</div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 p-2 border border-slate-300 rounded bg-slate-100 text-xs text-slate-600">Supporting Services: CloudWatch, CloudTrail, CloudFormation, Config, Systems Manager, IAM, Secrets Manager</div>
+                                </div>
+                            `
+                        }
+                    }
+                },
+                "reliability": {
+                    title: "Reliability",
+                    description: "The Reliability pillar encompasses the ability of a system to recover from infrastructure or service disruptions, dynamically acquire computing resources to meet demand, and mitigate disruptions. The key philosophy is to build systems that embrace failure as a natural occurrence.",
+                     principles: [
+                        { title: "Automatically recover from failure", content: "Implement automated mechanisms to detect and recover from failures without manual intervention. This includes using services like Amazon EC2 Auto Scaling to replace unhealthy instances and Elastic Load Balancing to distribute traffic away from failing components." },
+                        { title: "Test recovery procedures", content: "Regularly test your recovery procedures to validate their effectiveness and identify any gaps. This includes performing drills and using tools like AWS Fault Injection Simulator (FIS) to simulate real-world failure conditions in a safe environment." },
+                        { title: "Scale horizontally to increase aggregate workload availability", content: "Distribute your workload across multiple, smaller resources (horizontal scaling) rather than relying on a single, large resource (vertical scaling). This increases resilience by reducing the impact of individual component failures." },
+                        { title: "Manage change through automation", content: "Automate all changes to your infrastructure and applications. This reduces the risk of human error and ensures consistency. Use services like AWS Systems Manager Change Manager for reporting and auditing." }
+                    ],
+                    services: [
+                        { name: "Amazon EC2 Auto Scaling", details: "<strong>Description:</strong> Helps you maintain application availability and allows you to automatically add or remove EC2 instances according to conditions you define.<br><strong>Use Cases:</strong> Handling traffic fluctuations, ensuring a fixed number of instances are running, and automatically replacing unhealthy instances." },
+                        { name: "Elastic Load Balancing (ELB)", details: "<strong>Description:</strong> Automatically distributes incoming application traffic across multiple targets, such as Amazon EC2 instances, containers, IP addresses, and Lambda functions.<br><strong>Use Cases:</strong> High availability, fault tolerance, and seamless traffic distribution." },
+                        { name: "Amazon RDS Multi-AZ", details: "<strong>Description:</strong> Provides enhanced availability and durability for Amazon RDS database instances, making them a natural fit for production database workloads. It synchronously replicates the data to a standby instance in a different Availability Zone (AZ).<br><strong>Use Cases:</strong> Critical database workloads requiring high availability and automatic failover." },
+                        { name: "AWS Fault Injection Simulator (FIS)", details: "<strong>Description:</strong> A fully managed service for running fault injection experiments on AWS. It helps you improve an application’s performance, observability, and resiliency by introducing controlled failures.<br><strong>Use Cases:</strong> Simulating instance failures, API errors, or network latency to test system resilience." }
+                    ],
+                    lab: {
+                        title: "Lab 2: Reliability",
+                        description: "This hands-on lab guides you through improving service reliability using automation. You will expand the architecture to a second Availability Zone, set up Elastic Load Balancing, an EC2 Auto Scaling group, and migrate the database to a Multi-AZ Amazon RDS deployment.",
+                        tasks: [
+                           "Expand architecture to a second Availability Zone.",
+                           "Deploy a Multi-AZ Amazon RDS instance.",
+                           "Create an Application Load Balancer and Auto Scaling group.",
+                           "Migrate the database using AWS Systems Manager Run Command.",
+                           "Test application reliability by terminating instances."
+                        ],
+                        architecture: {
+                            initial: `
+                                <h4 class="font-semibold text-lg mb-2 text-slate-700">Initial Architecture (Same as Lab 1 Initial)</h4>
+                                <div class="grid grid-cols-1 gap-4 text-sm">
+                                    <div class="arch-box">Internet</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">Internet Gateway</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">VPC</div>
+                                    <div class="grid grid-cols-2 gap-4 mt-4">
+                                        <div class="flex flex-col items-center">
+                                            <div class="arch-box">Public Subnet</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Web App Instance</div>
+                                        </div>
+                                        <div class="flex flex-col items-center">
+                                            <div class="arch-box">Private Subnet</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Database Instance</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            target: `
+                                <h4 class="font-semibold text-lg mb-2 text-slate-700">Target Architecture</h4>
+                                <div class="grid grid-cols-1 gap-4 text-sm">
+                                    <div class="arch-box">Internet</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">Internet Gateway</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">Application Load Balancer (Public Subnets AZ1, AZ2)</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">VPC (2 Availability Zones)</div>
+                                    <div class="grid grid-cols-2 gap-4 mt-4">
+                                        <div class="flex flex-col items-center">
+                                            <div class="arch-box">AZ1: Public, Private, DB Private Subnets</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Web Server (Auto Scaling Group)</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Amazon RDS Instance</div>
+                                        </div>
+                                        <div class="flex flex-col items-center">
+                                            <div class="arch-box">AZ2: Public, Private, DB Private Subnets</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Web Server (Auto Scaling Group)</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Amazon RDS Instance</div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 p-2 border border-slate-300 rounded bg-slate-100 text-xs text-slate-600">Supporting Services: CloudWatch, CloudTrail, CloudFormation, Config, Systems Manager, IAM, Secrets Manager</div>
+                                </div>
+                            `
+                        },
+                        additional_content: `
+                            <h4 class="font-semibold text-xl mt-6 mb-2 text-slate-700">Horizontal vs. Vertical Auto-Scaling: Differences and Challenges</h4>
+                            <p class="text-slate-600 mb-4">Horizontal and vertical auto-scaling are two fundamental strategies for adjusting computing resources to meet demand, but they differ significantly in their approach and implications:</p>
+                            <h5 class="font-semibold text-lg mb-2 text-slate-700">1. Vertical Auto-Scaling (Scaling Up/Down)</h5>
+                            <p class="text-slate-600 mb-2"><strong>Meaning:</strong> This involves increasing or decreasing the capacity of a <em>single</em> resource (e.g., a server, a database instance) by adding or removing CPU, memory, or storage. Think of it like upgrading or downgrading a single computer with more powerful components.</p>
+                            <p class="text-slate-600 mb-2"><strong>How it works:</strong> When demand increases, an application might be moved to a larger EC2 instance type (e.g., from <code>t3.medium</code> to <code>m5.xlarge</code>). When demand decreases, scaling down to a smaller instance occurs.</p>
+                            <ul class="list-disc list-inside space-y-1 text-slate-600 mb-2">
+                                <li><strong>Pros:</strong> Simplicity, simpler data consistency for stateful applications.</li>
+                                <li><strong>Cons:</strong> Single point of failure, finite limits to scaling, typically requires downtime, can be cost-inefficient.</li>
+                            </ul>
+                            <h5 class="font-semibold text-lg mt-4 mb-2 text-slate-700">2. Horizontal Auto-Scaling (Scaling Out/In)</h5>
+                            <p class="text-slate-600 mb-2"><strong>Meaning:</strong> This involves adding or removing <em>more instances</em> of a resource to distribute the workload. Think of it like adding more identical computers to a cluster to handle increased traffic.</p>
+                            <p class="text-slate-600 mb-2"><strong>How it works:</strong> When demand increases, new EC2 instances are launched and traffic is distributed among them using a load balancer. When demand decreases, instances are terminated.</p>
+                            <ul class="list-disc list-inside space-y-1 text-slate-600 mb-2">
+                                <li><strong>Pros:</strong> High Availability & Fault Tolerance, near-infinite scalability, cost efficiency, no downtime.</li>
+                                <li><strong>Cons:</strong> Increased complexity for stateless applications, requires load balancing, potential cold start issues.</li>
+                            </ul>
+                            <h5 class="font-semibold text-lg mt-4 mb-2 text-slate-700">Challenges of Auto-Scaling (Both Horizontal and Vertical):</h5>
+                            <ul class="list-disc list-inside space-y-1 text-slate-600">
+                                <li><strong>Defining Accurate Metrics:</strong> Choosing the right metrics and thresholds for scaling can be tricky.</li>
+                                <li><strong>Lag Time:</strong> Delay between a metric crossing a threshold and a new resource becoming fully operational.</li>
+                                <li><strong>Stateful Applications:</strong> Scaling stateful applications horizontally is complex due to data consistency and session persistence needs.</li>
+                                <li><strong>Cost Management:</strong> Misconfigured scaling policies can lead to "runaway costs."</li>
+                                <li><strong>Testing Challenges:</strong> Thoroughly testing auto-scaling behavior is crucial but complex.</li>
+                                <li><strong>Thundering Herd Problem:</strong> Many instances starting simultaneously might overwhelm a shared resource.</li>
+                                <li><strong>Resource Contention:</strong> Underlying shared resources can become bottlenecks.</li>
+                            </ul>
+                            <h4 class="font-semibold text-xl mt-6 mb-2 text-slate-700">AWS Target Groups and Auto Scaling Groups (ASGs): Complementary Roles in Scalability and Reliability</h4>
+                            <p class="text-slate-600 mb-2">AWS Target Groups and Auto Scaling Groups (ASGs) are both fundamental components in building scalable, highly available, and resilient applications on AWS, but they serve distinct and complementary purposes.</p>
+                            <p class="text-slate-600 mb-2">Think of it this way:</p>
+                            <ul class="list-disc list-inside space-y-1 text-slate-600 mb-4">
+                                <li><strong>Target Group:</strong> Where traffic goes. It is about routing requests.</li>
+                                <li><strong>Auto Scaling Group:</strong> What manages the instances that traffic might go to. It is about capacity and resilience.</li>
+                            </ul>
+                            <p class="text-slate-600 mb-2"><strong>AWS Target Group:</strong> A Target Group is a logical grouping of targets, such as EC2 instances, IP addresses, or Lambda functions, to which an Elastic Load Balancer (ELB) routes traffic. It continuously monitors the health of its registered targets using health checks and ensures that traffic is only sent to healthy targets.</p>
+                            <p class="text-slate-600 mb-4"><strong>AWS Auto Scaling Group (ASG):</strong> An Auto Scaling Group is a collection of EC2 instances that are treated as a logical grouping for the purposes of automatic scaling and management. An ASG ensures a desired number of EC2 instances are running to handle an application's load, automatically launching or terminating instances based on defined scaling policies, and replacing unhealthy instances.</p>
+                            <h5 class="font-semibold text-lg mt-4 mb-2 text-slate-700">Complex Example: E-commerce Application with Multiple Target Groups and Diverse Resources</h5>
+                            <p class="text-slate-600 mb-2">While a single Target Group typically points to a homogeneous set of targets (e.g., all EC2 instances, or all Lambda functions), a single Application Load Balancer (ALB) can route traffic to multiple different Target Groups, each of which can contain different types of resources or be managed by different scaling mechanisms.</p>
+                            <p class="text-slate-600 mb-4">Let's imagine a hypothetical e-commerce application with various backend services:</p>
+                            <ul class="list-disc list-inside space-y-1 text-slate-600 mb-4">
+                                <li><strong>Public-facing Web Application:</strong> Needs to scale dynamically based on user traffic.</li>
+                                <li><strong>Admin Dashboard:</strong> A less frequently accessed, perhaps more stable internal application.</li>
+                                <li><strong>Image Processing Service:</strong> A backend service that processes uploaded images, potentially using a mix of on-demand and spot instances for cost optimization.</li>
+                                <li><strong>Order Fulfillment API:</strong> A serverless API endpoint for processing new orders.</li>
+                            </ul>
+                            <p class="text-slate-600 mb-4">Here's how this could be set up using an Application Load Balancer and multiple Target Groups:</p>
+                            <h6 class="font-semibold text-md mb-2 text-slate-700">Architecture Overview</h6>
+                            <ol class="list-decimal list-inside space-y-2 text-slate-600 mb-4">
+                                <li><strong>Application Load Balancer (ALB)</strong>
+                                    <ul class="list-disc list-inside ml-5 space-y-1 text-slate-600">
+                                        <li>This is the single entry point for all incoming HTTP/HTTPS traffic to the application.</li>
+                                        <li>It has listeners configured for ports 80 (HTTP) and 443 (HTTPS).</li>
+                                        <li>Its listener rules will determine which Target Group traffic is sent to, based on conditions like path, host header, or HTTP method.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Target Groups (and their associated resources)</strong>
+                                    <ul class="list-disc list-inside ml-5 space-y-1 text-slate-600">
+                                        <li><strong>Web-App-TG (Associated with an Auto Scaling Group)</strong>
+                                            <ul class="list-disc list-inside ml-5 space-y-1 text-slate-600">
+                                                <li><strong>Purpose:</strong> Handles all public-facing web traffic (e.g., <code>www.example.com/</code>).</li>
+                                                <li><strong>Target Type:</strong> Instance</li>
+                                                <li><strong>Targets:</strong> EC2 instances launched and managed by an Auto Scaling Group (ASG).</li>
+                                                <li><strong>ASG Configuration:</strong> Launch Template, Scaling Policies, Health Checks.</li>
+                                                <li><strong>How it works:</strong> When the ASG scales out, it automatically registers new EC2 instances with Web-App-TG. When it scales in or replaces unhealthy instances, it automatically deregisters them. The ALB continuously monitors the health of these instances via Web-App-TG and only sends traffic to healthy ones.</li>
+                                            </ul>
+                                        </li>
+                                        <li><strong>Admin-Portal-TG (Associated with Static EC2 Instances / IP Addresses)</strong>
+                                            <ul class="list-disc list-inside ml-5 space-y-1 text-slate-600">
+                                                <li><strong>Purpose:</strong> Hosts an internal administration dashboard (e.g., <code>admin.example.com/</code>). This might be a smaller, more stable internal application that does not require dynamic scaling.</li>
+                                                <li><strong>Target Type:</strong> Instance or IP</li>
+                                                <li><strong>Targets:</strong> A fixed set of manually provisioned EC2 instances or specific private IP addresses.</li>
+                                                <li><strong>Configuration:</strong> Manual registration of the instance IDs or private IP addresses of the admin portal servers with this target group occurs.</li>
+                                                <li><strong>Health Checks:</strong> Configured to monitor the health of these specific admin servers.</li>
+                                                <li><strong>How it works:</strong> The ALB routes traffic for <code>admin.example.com</code> to this target group. Since there is no ASG, the number of instances remains static unless manually added or removed from the target group.</li>
+                                            </ul>
+                                        </li>
+                                        <li><strong>Image-Processor-TG (Associated with instances from an Auto Scaling Group or potentially a Fleet's instances)</strong>
+                                            <ul class="list-disc list-inside ml-5 space-y-1 text-slate-600">
+                                                <li><strong>Purpose:</strong> Processes user-uploaded images (e.g., <code>api.example.com/process-image</code>). This workload might benefit from using Spot Instances for cost savings.</li>
+                                                <li><strong>Target Type:</strong> Instance</li>
+                                                <li><strong>Targets:</strong> EC2 instances. These could be managed by:
+                                                    <ul class="list-disc list-inside ml-5 space-y-1 text-slate-600">
+                                                        <li><strong>Option 1 (Common):</strong> An ASG configured for <strong>Mixed Instances Policy</strong>.</li>
+                                                        <li><strong>Option 2 (Less direct TG association):</strong> <strong>EC2 Fleet or Spot Fleet</strong>.</li>
+                                                    </ul>
+                                                </li>
+                                                <li><strong>How it works:</strong> The ALB routes image processing requests to Image-Processor-TG. The instances within this group handle the processing. The target group's health checks ensure only active processors receive tasks.</li>
+                                            </ul>
+                                        </li>
+                                        <li><strong>Order-API-TG (Associated with a Lambda Function)</strong>
+                                            <ul class="list-disc list-inside ml-5 space-y-1 text-slate-600">
+                                                <li><strong>Purpose:</strong> Provides a serverless API endpoint for order creation (e.g., <code>api.example.com/orders</code>).</li>
+                                                <li><strong>Target Type:</strong> Lambda</li>
+                                                <li><strong>Targets:</strong> A single AWS Lambda function.</li>
+                                                <li><strong>Configuration:</strong> The ARN of the Lambda function is registered directly with this target group.</li>
+                                                <li><strong>Health Checks:</strong> For Lambda target groups, health checks are typically not applicable in the same way as EC2 instances.</li>
+                                                <li><strong>How it works:</strong> When a request matches a rule pointing to Order-API-TG, the ALB directly invokes the specified Lambda function. The Lambda function then handles the request, and its response is sent back through the ALB to the client.</li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ol>
+                            <h6 class="font-semibold text-md mb-2 text-slate-700">ALB Listener Rules Example</h6>
+                            <p class="text-slate-600 mb-2">Here's how the ALB's listener rules might look to direct traffic to these different target groups:</p>
+                            <ul class="list-disc list-inside space-y-2 text-slate-600 mb-4">
+                                <li><strong>Listener: HTTPS (Port 443)</strong>
+                                    <ul class="list-disc list-inside ml-5 space-y-1 text-slate-600">
+                                        <li><strong>Rule 1 (Default):</strong> Condition: (No specific condition - acts as a fallback); Action: Forward to Web-App-TG (This handles all general web traffic).</li>
+                                        <li><strong>Rule 2:</strong> Condition: Host header is <code>admin.example.com</code>; Action: Forward to Admin-Portal-TG</li>
+                                        <li><strong>Rule 3:</strong> Condition: Path is <code>/process-image*</code>; Action: Forward to Image-Processor-TG</li>
+                                        <li><strong>Rule 4:</strong> Condition: Path is <code>/orders*</code>; Action: Forward to Order-API-TG</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                            <h6 class="font-semibold text-md mb-2 text-slate-700">Benefits of this Approach</h6>
+                            <p class="text-slate-600 mb-2">This setup demonstrates how Target Groups provide a flexible abstraction layer between the Load Balancer and backend compute resources. Key benefits include:</p>
+                            <ul class="list-disc list-inside space-y-1 text-slate-600">
+                                <li><strong>Decoupling:</strong> The ALB does not need to know the specifics of how backend instances are managed (ASG, static, Lambda). It just sends traffic to the designated target group.</li>
+                                <li><strong>Scalability:</strong> Each component can scale independently based on its specific needs.</li>
+                                <li><strong>Resilience:</strong> Unhealthy targets are automatically removed from rotation by the Target Group's health checks, and ASGs automatically replace failed instances.</li>
+                                <li><strong>Cost Optimization:</strong> Cost-effective strategies like Spot Instances can be used for certain workloads while maintaining higher availability for critical services.</li>
+                                <li><strong>Simplified Routing:</strong> Complex routing logic is handled by the ALB's listener rules, directing traffic to the appropriate backend service.</li>
+                                <li><strong>Service Evolution:</strong> The underlying compute for a target group can be easily swapped out without changing the ALB's listener rules.</li>
+                            </ul>
+                        `
+                    }
+                },
+                "performance-efficiency": {
+                    title: "Performance Efficiency",
+                    description: "The Performance Efficiency pillar encompasses the efficient use of computing resources to meet requirements and maintain efficiency as demand changes and technologies evolve. It's about getting the most out of your resources.",
+                    principles: [
+                        { title: "Democratize advanced technologies", content: "Make complex technologies accessible by using AWS managed services. This allows your team to leverage powerful, scalable, and highly performant technologies without needing deep expertise in their operational aspects." },
+                        { title: "Go global in minutes", content: "Leverage AWS's global infrastructure to deploy your applications closer to your users worldwide. This significantly reduces latency and improves the user experience. Services like Amazon CloudFront and AWS CloudFormation facilitate this." },
+                        { title: "Use serverless architectures", content: "Embrace serverless computing models (e.g., AWS Lambda, Amazon API Gateway) to offload operational responsibilities to AWS. Serverless services automatically scale, manage infrastructure, and charge only for actual usage." },
+                        { title: "Experiment more often", content: "The cloud's agility allows you to easily provision and de-provision resources, making it cost-effective to experiment with different instance types, database configurations, or architectural patterns to find the most performant solution." },
+                        { title: "Consider mechanical sympathy", content: "Design your software and choose your resources with an understanding of the underlying hardware and network characteristics. Optimizing for how the hardware actually works can lead to significant performance gains." }
+                    ],
+                    services: [
+                        { name: "Amazon CloudFront", details: "<strong>Description:</strong> A fast content delivery network (CDN) service that securely delivers data, videos, applications, and APIs to customers globally with low latency and high transfer speeds.<br><strong>Use Cases:</strong> Caching static and dynamic content at edge locations, reducing latency for global users." },
+                        { name: "AWS Lambda", details: "<strong>Description:</strong> A serverless compute service that lets you run code without provisioning or managing servers. You pay only for the compute time you consume.<br><strong>Use Cases:</strong> Event-driven applications, backend APIs, data processing." },
+                        { name: "Amazon DynamoDB", details: "<strong>Description:</strong> A key-value and document database that delivers single-digit millisecond performance at any scale. It's a fully managed, multiregion, multimaster, durable database with built-in security, backup and restore.<br><strong>Use Cases:</strong> High-traffic web applications, e-commerce systems, gaming applications." }
+                    ],
+                     lab: {
+                        title: "Lab 4: Performance Efficiency",
+                        description: "This lab guides you through measuring the performance and behavior of an Amazon EC2 Auto Scaling group. You will visualize metrics, set thresholds with CloudWatch, and perform a stress test to validate the scaling of resources.",
+                        tasks: [
+                           "Create target tracking scaling policies for an EC2 Auto Scaling group.",
+                           "Create an Amazon CloudWatch dashboard to visualize key performance metrics.",
+                           "Perform a stress test to validate the scaling policy and observe the system's behavior under load."
+                        ],
+                        architecture: {
+                            initial: `
+                                <h4 class="font-semibold text-lg mb-2 text-slate-700">Initial Architecture (Similar to previous labs, focus on current state before optimization)</h4>
+                                <div class="grid grid-cols-1 gap-4 text-sm">
+                                    <div class="arch-box">Internet</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">Internet Gateway</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">VPC</div>
+                                    <div class="grid grid-cols-2 gap-4 mt-4">
+                                        <div class="flex flex-col items-center">
+                                            <div class="arch-box">Public Subnet</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Web App Instance</div>
+                                        </div>
+                                        <div class="flex flex-col items-center">
+                                            <div class="arch-box">Private Subnet</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Database Instance</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            target: `
+                                <h4 class="font-semibold text-lg mb-2 text-slate-700">Target Architecture</h4>
+                                <p class="text-slate-600 mb-4">This lab guides through activities to learn how to measure the performance and the behavior of an Amazon EC2 Auto Scaling group. Remember, if it cannot be measured, it cannot be managed. If it cannot be managed, it cannot be improved.</p>
+                                <p class="text-slate-600 mb-4">Visualization and setting thresholds to check the performance of resources using Amazon CloudWatch dashboards will occur. Alerts will be used to modify the architecture in case a defined threshold is breached, either to increase or decrease the number of instances accordingly.</p>
+                                <p class="text-slate-600 mb-4">Finally, aligned with the performance efficiency pillar, the design principle to <strong>experiment more often</strong> will be used to perform an automated test that validates the scaling of the resources.</p>
+                                <div class="grid grid-cols-1 gap-4 text-sm">
+                                    <div class="arch-box">Internet</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">Internet Gateway</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">Application Load Balancer (Public Subnets AZ1, AZ2)</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">VPC (2 Availability Zones)</div>
+                                    <div class="grid grid-cols-2 gap-4 mt-4">
+                                        <div class="flex flex-col items-center">
+                                            <div class="arch-box">AZ1: Public, Private, DB Private Subnets</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Web Server (Auto Scaling Group)</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Amazon RDS Instance</div>
+                                        </div>
+                                        <div class="flex flex-col items-center">
+                                            <div class="arch-box">AZ2: Public, Private, DB Private Subnets</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Web Server (Auto Scaling Group)</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Amazon RDS Instance</div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 p-2 border border-slate-300 rounded bg-slate-100 text-xs text-slate-600">Supporting Services: CloudWatch, Systems Manager, CloudTrail, CloudFormation, Config, IAM</div>
+                                </div>
+                            `
+                        }
+                    }
+                },
+                 "cost-optimization": {
+                    title: "Cost Optimization",
+                    description: "The Cost Optimization pillar encourages the ability to run systems that deliver business value at the lowest price point. It's about a continuous effort to optimize cloud spending.",
+                    principles: [
+                        { title: "Implement cloud financial management (CFM)", content: "Establish a culture and set of practices for actively managing and optimizing cloud costs. This involves collaboration between finance, engineering, and business teams to make data-driven spending decisions." },
+                        { title: "Adopt a consumption model", content: "Pay only for the computing resources you actually consume. This means leveraging the elasticity and pay-as-you-go nature of the cloud, and shutting down resources when not in use." },
+                        { title: "Measure overall efficiency", content: "Continuously monitor and analyze your cloud costs in relation to the business value or output (e.g., cost per transaction). This helps you understand if your spending is efficient." },
+                        { title: "Stop spending money on undifferentiated heavy lifting", content: "Focus your engineering efforts on activities that differentiate your business, and offload common tasks to AWS managed services. For example, use Amazon RDS instead of managing your own database on EC2." },
+                        { title: "Analyze and attribute expenditure", content: "Gain deep visibility into your cloud spending by tagging resources and organizing accounts. This allows you to attribute costs to specific teams or projects, fostering accountability." }
+                    ],
+                    services: [
+                        { name: "AWS Cost Explorer", details: "<strong>Description:</strong> An easy-to-use interface that lets you visualize, understand, and manage your AWS costs and usage over time.<br><strong>Use Cases:</strong> Analyzing cost and usage data, identifying cost trends, and filtering data by tags or services." },
+                        { name: "AWS Budgets", details: "<strong>Description:</strong> Allows you to set custom budgets to track your cost and usage from the simplest to the most complex use cases. You can set alarms to be notified when you exceed your budget thresholds.<br><strong>Use Cases:</strong> Cost control, budget tracking, and receiving alerts on spending." },
+                        { name: "AWS Savings Plans", details: "<strong>Description:</strong> A flexible pricing model that offers lower prices on Amazon EC2 and AWS Fargate usage, in exchange for a commitment to a consistent amount of usage (measured in $/hour) for a 1 or 3-year term.<br><strong>Use Cases:</strong> Reducing costs for consistent, long-term workloads." },
+                        { name: "Amazon EC2 Spot Instances", details: "<strong>Description:</strong> Allow you to take advantage of unused EC2 capacity in the AWS cloud at up to a 90% discount compared to On-Demand prices.<br><strong>Use Cases:</strong> Fault-tolerant workloads like big data analysis, containerized workloads, and CI/CD." }
+                    ],
+                     lab: {
+                        title: "Lab 5: Cost Optimization",
+                        description: "This lab guides you through using AWS Config to enforce tagging for EC2 instances and instance type standardization for non-production environments. This helps you control costs and align usage with business requirements.",
+                        tasks: [
+                           "Create AWS Config rules to enforce tagging policies.",
+                           "Review and remediate non-compliant resources identified by AWS Config.",
+                           "Apply preventative controls to ensure ongoing compliance and cost optimization."
+                        ],
+                        architecture: {
+                            initial: `
+                                <h4 class="font-semibold text-lg mb-2 text-slate-700">Initial Architecture (Similar to previous labs)</h4>
+                                <div class="grid grid-cols-1 gap-4 text-sm">
+                                    <div class="arch-box">Internet</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">Internet Gateway</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">VPC</div>
+                                    <div class="grid grid-cols-2 gap-4 mt-4">
+                                        <div class="flex flex-col items-center">
+                                            <div class="arch-box">Public Subnet</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Web App Instance</div>
+                                        </div>
+                                        <div class="flex flex-col items-center">
+                                            <div class="arch-box">Private Subnet</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Database Instance</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `,
+                            target: `
+                                <h4 class="font-semibold text-lg mb-2 text-slate-700">Target Architecture</h4>
+                                <p class="text-slate-600 mb-4">This lab guides through the steps to use AWS Config to enforce tagging for Amazon Elastic Compute Cloud (Amazon EC2) instances and instance type standardization for non-production environments. The skills learned help control cost and usage in alignment with business requirements. Payment is only for the computing resources consumed and needed, which is fundamental according to the Adopt a consumption model design principle.</p>
+                                <p class="text-slate-600 mb-4">Detailed cost optimization design principles are found in the <a href="https://docs.aws.amazon.com/wellarchitected/latest/framework/cost-optimization.html" target="_blank" class="text-[#156ce0] hover:underline">AWS Documentation</a>.</p>
+                                <div class="grid grid-cols-1 gap-4 text-sm">
+                                    <div class="arch-box">Internet</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">Internet Gateway</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">Application Load Balancer (Public Subnets AZ1, AZ2)</div>
+                                    <div class="arch-arrow">↓</div>
+                                    <div class="arch-box">VPC (2 Availability Zones)</div>
+                                    <div class="grid grid-cols-2 gap-4 mt-4">
+                                        <div class="flex flex-col items-center">
+                                            <div class="arch-box">AZ1: Public, Private, DB Private Subnets</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Web Server (Auto Scaling Group)</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Amazon RDS Instance</div>
+                                        </div>
+                                        <div class="flex flex-col items-center">
+                                            <div class="arch-box">AZ2: Public, Private, DB Private Subnets</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Web Server (Auto Scaling Group)</div>
+                                            <div class="arch-arrow">↓</div>
+                                            <div class="arch-box">Amazon RDS Instance</div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 p-2 border border-slate-300 rounded bg-slate-100 text-xs text-slate-600">Supporting Services: CloudWatch, CloudTrail, CloudFormation, Config, Systems Manager, IAM, Secrets Manager</div>
+                                </div>
+                            `
+                        }
+                    }
+                },
+                "sustainability": {
+                    title: "Sustainability",
+                    description: "The Sustainability pillar focuses on minimizing the environmental impacts of running cloud workloads. This includes reducing energy consumption, improving resource utilization, and adopting more efficient hardware and software.",
+                     principles: [
+                        { title: "Understand your impact", content: "Gain visibility into the environmental impact of your cloud workloads. This involves measuring and monitoring resource consumption (e.g., energy, carbon emissions) to identify areas for improvement." },
+                        { title: "Establish sustainability goals", content: "Define clear and measurable goals for reducing the environmental impact of your cloud operations. These goals should align with your organization's broader sustainability objectives." },
+                        { title: "Maximize utilization", content: "Optimize the use of your computing resources to reduce idle capacity and improve efficiency. This can involve right-sizing instances, leveraging auto-scaling, and using serverless architectures." },
+                        { title: "Anticipate and adopt new, more efficient hardware and software offerings", content: "Stay informed about and adopt new technologies, hardware, and software that offer improved energy efficiency and performance. AWS continuously innovates to provide more sustainable infrastructure." },
+                        { title: "Use managed services", content: "Leverage AWS managed services (e.g., Amazon S3, Amazon RDS, AWS Lambda) where possible. These services are often optimized for efficiency and managed by AWS, which has a strong commitment to sustainability at scale." },
+                        { title: "Reduce the downstream impact of your cloud workloads", content: "Consider the broader environmental impact of your workloads, including data transfer, storage, and the end-of-life management of hardware. Design architectures that minimize these impacts." }
+                    ],
+                    services: [
+                       { name: "AWS Compute Optimizer", details: "<strong>Description:</strong> Recommends optimal AWS resources for your workloads to reduce costs and improve performance by using machine learning to analyze historical utilization metrics.<br><strong>Use Cases:</strong> Right-sizing EC2 instances, EBS volumes, and Lambda functions to maximize utilization and reduce energy waste." },
+                       { name: "AWS Graviton Processors", details: "<strong>Description:</strong> Custom-built by AWS using 64-bit Arm Neoverse cores to deliver the best price performance for your cloud workloads running in Amazon EC2. They offer significant energy efficiency improvements.<br><strong>Use Cases:</strong> A wide range of workloads including application servers, microservices, high-performance computing, and video encoding." },
+                       { name: "Amazon S3 Lifecycle Policies", details: "<strong>Description:</strong> Allow you to automate the process of moving data to more cost-effective and energy-efficient storage tiers (like S3 Glacier) as it becomes less frequently accessed.<br><strong>Use Cases:</strong> Archiving old logs, backups, and user data to reduce storage footprint and associated energy consumption." }
+                    ],
+                    lab: null
+                }
+            };
+
+            const quizQuestions = [
+                {
+                    question: "Which pillar focuses on running and monitoring systems to deliver business value?",
+                    choices: ["Security", "Reliability", "Operational Excellence", "Cost Optimization"],
+                    correct: "Operational Excellence"
+                },
+                {
+                    question: "Which AWS service is used for automated patching and configuration management?",
+                    choices: ["Amazon S3", "AWS Systems Manager", "Amazon CloudWatch", "AWS Lambda"],
+                    correct: "AWS Systems Manager"
+                },
+                {
+                    question: "What is the primary benefit of Horizontal Auto-Scaling over Vertical Auto-Scaling?",
+                    choices: ["Simplicity in managing stateful applications", "No downtime during scaling operations", "Lower initial setup cost", "Guaranteed single point of failure"],
+                    correct: "No downtime during scaling operations"
+                },
+                {
+                    question: "Which security design principle emphasizes logging and auditing all actions?",
+                    choices: ["Implement a strong identity foundation", "Apply security at all layers", "Maintain traceability", "Protect data in transit and at rest"],
+                    correct: "Maintain traceability"
+                },
+                {
+                    question: "Which AWS service helps protect web applications from common web exploits like SQL injection?",
+                    choices: ["Amazon GuardDuty", "AWS WAF", "AWS Config", "AWS KMS"],
+                    correct: "AWS WAF"
+                }
+            ];
+            
+            function createPillarContent(pillarKey) {
+                const pillarData = data[pillarKey];
+                if (!pillarData) return '';
+
+                let servicesHtml = '';
+                if (pillarData.services && pillarData.services.length > 0) {
+                    servicesHtml = `<h3 class="text-2xl font-bold mt-8 mb-4 text-slate-800">Key Services</h3>
+                                    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        ${pillarData.services.map(service => `
+                                            <div class="service-card bg-white p-4 rounded-lg shadow cursor-pointer hover:shadow-lg hover:scale-105 transition-all" data-service-name="${service.name}">
+                                                <h4 class="font-semibold text-[#f66f01]">${service.name}</h4>
+                                            </div>
+                                        `).join('')}
+                                    </div>`;
+                }
+
+                let labHtml = '';
+                if(pillarData.lab) {
+                    labHtml = `<div class="mt-8 bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-2xl font-bold mb-4 text-[#156ce0]">${pillarData.lab.title}</h3>
+                        <p class="text-slate-600 mb-4">${pillarData.lab.description}</p>
+                        ${pillarData.lab.architecture && pillarData.lab.architecture.initial ? `<div class="mt-6 p-4 bg-slate-50 rounded-lg">${pillarData.lab.architecture.initial}</div>` : ''}
+                        ${pillarData.lab.architecture && pillarData.lab.architecture.target ? `<div class="mt-6 p-4 bg-slate-50 rounded-lg">${pillarData.lab.architecture.target}</div>` : ''}
+                        <h4 class="font-semibold text-lg mb-2 mt-4 text-slate-700">What will be done during this Lab:</h4>
+                        <ul class="list-disc list-inside space-y-2 text-slate-600">
+                            ${pillarData.lab.tasks.map(task => `<li>${task}</li>`).join('')}
+                        </ul>
+                    </div>`;
+                }
+                
+                let additionalContentHtml = '';
+                if (pillarData.lab && pillarData.lab.additional_content) {
+                    additionalContentHtml = `<div class="mt-8 bg-white p-6 rounded-xl shadow-lg">${pillarData.lab.additional_content}</div>`;
+                }
+
+
+                return `
+                    <div class="bg-white p-8 rounded-xl shadow-lg">
+                        <h2 class="text-4xl font-bold mb-4 text-[#f66f01]">${pillarData.title}</h2>
+                        <p class="text-lg text-slate-600 mb-6">${pillarData.description}</p>
+                    </div>
+                    <div class="mt-8">
+                        <h3 class="text-2xl font-bold mb-4 text-slate-800">Design Principles</h3>
+                        <div class="space-y-4">
+                            ${pillarData.principles.map((p, i) => `
+                                <div class="bg-white rounded-lg shadow">
+                                    <button class="accordion-button w-full text-left p-4 flex justify-between items-center font-semibold text-lg text-slate-700 hover:bg-slate-50">
+                                        <span>${p.title}</span>
+                                        <svg class="w-6 h-6 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    </button>
+                                    <div class="accordion-content">
+                                        <p>${p.content}</p>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ${servicesHtml}
+                    ${labHtml}
+                    ${additionalContentHtml}
+                `;
+            }
+
+            function updateContent(hash) {
+                hash = hash.substring(1); 
+                if (!hash) hash = 'introduction';
+                
+                contentSections.forEach(section => {
+                    section.classList.toggle('active', section.id === hash);
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.toggle('active', link.getAttribute('href') === `#${hash}`);
+                });
+
+                if(sidebar.classList.contains('lg:relative')) {
+                    sidebar.classList.remove('lg:relative');
+                }
+                sidebar.classList.add('-translate-x-full');
+
+                if (hash === 'quiz') {
+                    startQuiz();
+                }
+            }
+
+            for (const key in data) {
+                const section = document.getElementById(key);
+                if (section) {
+                    section.innerHTML = createPillarContent(key);
+                }
+            }
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const hash = e.currentTarget.getAttribute('href');
+                    history.pushState(null, null, hash);
+                    updateContent(hash);
+                });
+            });
+
+            window.addEventListener('popstate', () => {
+                updateContent(location.hash || '#introduction');
+            });
+
+            updateContent(location.hash || '#introduction');
+
+            document.body.addEventListener('click', function(e) {
+                if (e.target.closest('.accordion-button')) {
+                    const button = e.target.closest('.accordion-button');
+                    const content = button.nextElementSibling;
+                    const icon = button.querySelector('svg');
+
+                    content.classList.toggle('open');
+                    icon.classList.toggle('rotate-180');
+                }
+            });
+
+            function openModal(serviceName) {
+                for (const pillarKey in data) {
+                    const pillar = data[pillarKey];
+                    const service = pillar.services && pillar.services.find(s => s.name === serviceName);
+                    if (service) {
+                        modalTitle.textContent = service.name;
+                        modalBody.innerHTML = service.details;
+                        modal.classList.remove('hidden');
+                        document.body.style.overflow = 'hidden';
+                        setTimeout(() => {
+                           modal.querySelector('.modal-content').classList.remove('scale-95');
+                           modal.classList.remove('opacity-0');
+                        }, 10);
+                        break;
+                    }
+                }
+            }
+
+            function closeModal() {
+                 modal.querySelector('.modal-content').classList.add('scale-95');
+                 modal.classList.add('opacity-0');
+                 setTimeout(() => {
+                    modal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }, 300);
+            }
+            
+            document.body.addEventListener('click', function(e) {
+                if(e.target.closest('.service-card')) {
+                    const serviceName = e.target.closest('.service-card').dataset.serviceName;
+                    openModal(serviceName);
+                }
+            });
+
+            modalCloseButton.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+            document.addEventListener('keydown', (e) => {
+                if(e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                    closeModal();
+                }
+            });
+            
+            menuButton.addEventListener('click', () => {
+                sidebar.classList.toggle('-translate-x-full');
+            });
+
+            // Quiz Functions
+            function startQuiz() {
+                currentQuizQuestionIndex = 0;
+                correctAnswersCount = 0;
+                quizResults.classList.add('hidden');
+                quizContainer.innerHTML = ''; // Clear previous questions
+                displayQuizQuestion();
+            }
+
+            function displayQuizQuestion() {
+                if (currentQuizQuestionIndex < quizQuestions.length) {
+                    const q = quizQuestions[currentQuizQuestionIndex];
+                    quizContainer.innerHTML = `
+                        <div class="question-card bg-slate-50 p-6 rounded-lg shadow-md mb-6">
+                            <p class="text-xl font-semibold mb-4">${currentQuizQuestionIndex + 1}. ${q.question}</p>
+                            <div class="choices space-y-3">
+                                ${q.choices.map((choice, i) => `
+                                    <label class="block">
+                                        <input type="radio" name="question-${currentQuizQuestionIndex}" value="${choice}" class="mr-2">
+                                        ${choice}
+                                    </label>
+                                `).join('')}
+                            </div>
+                            <button id="submit-answer-button" class="mt-6 px-6 py-3 bg-[#f66f01] text-white font-semibold rounded-lg shadow hover:bg-orange-700 transition-colors">Submit Answer</button>
+                        </div>
+                    `;
+                    document.getElementById('submit-answer-button').addEventListener('click', checkAnswer);
+                } else {
+                    showQuizResults();
+                }
+            }
+
+            function checkAnswer() {
+                const selectedChoice = document.querySelector(`input[name="question-${currentQuizQuestionIndex}"]:checked`);
+                const questionCard = document.querySelector('.question-card');
+                
+                if (!selectedChoice) {
+                    alert('Please select an answer!');
+                    return;
+                }
+
+                const userAnswer = selectedChoice.value;
+                const correctAnswer = quizQuestions[currentQuizQuestionIndex].correct;
+                
+                if (userAnswer === correctAnswer) {
+                    correctAnswersCount++;
+                    questionCard.classList.add('border-2', 'border-green-500');
+                    questionCard.classList.remove('border-red-500');
+                } else {
+                    questionCard.classList.add('border-2', 'border-red-500');
+                    questionCard.classList.remove('border-green-500');
+                }
+
+                // Disable choices after submission
+                document.querySelectorAll(`input[name="question-${currentQuizQuestionIndex}"]`).forEach(radio => {
+                    radio.disabled = true;
+                });
+
+                // Add a small delay before moving to the next question
+                setTimeout(() => {
+                    currentQuizQuestionIndex++;
+                    displayQuizQuestion();
+                }, 1500); // 1.5 second delay
+            }
+
+            function showQuizResults() {
+                quizContainer.innerHTML = ''; // Clear quiz questions
+                quizResults.classList.remove('hidden');
+                scoreDisplay.textContent = `You scored ${correctAnswersCount} out of ${quizQuestions.length} questions correctly!`;
+
+                const ctx = document.getElementById('feedbackChart').getContext('2d');
+                if (feedbackChartInstance) {
+                    feedbackChartInstance.destroy();
+                }
+                feedbackChartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Correct', 'Incorrect'],
+                        datasets: [{
+                            data: [correctAnswersCount, quizQuestions.length - correctAnswersCount],
+                            backgroundColor: ['#34D399', '#EF4444'], // Green and Red
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed !== null) {
+                                            label += context.parsed;
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            retakeQuizButton.addEventListener('click', startQuiz);
+
+            // Initial call to start quiz if quiz section is active
+            if (location.hash === '#quiz') {
+                startQuiz();
+            }
+        });
+    </script>
+</body>
+</html>
