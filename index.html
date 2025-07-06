@@ -97,7 +97,7 @@
 
     <div class="flex min-h-screen">
         <!-- Sidebar Navigation -->
-        <aside id="sidebar" class="w-64 bg-white shadow-md fixed lg:relative h-full lg:h-auto lg:min-h-screen z-20 -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
+        <aside id="sidebar" class="w-64 bg-white shadow-md fixed lg:sticky lg:top-0 h-full lg:h-screen z-20 -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
             <div class="p-4">
                 <h1 class="text-2xl font-bold text-[#f66f01]">Well-Architected</h1>
                 <p class="text-sm text-slate-500">Interactive Guide</p>
@@ -878,8 +878,8 @@
                     labHtml = `<div class="mt-8 bg-white p-6 rounded-xl shadow-lg">
                         <h3 class="text-2xl font-bold mb-4 text-[#156ce0]">${pillarData.lab.title}</h3>
                         <p class="text-slate-600 mb-4">${pillarData.lab.description}</p>
-                        ${pillarData.lab.architecture && pillarData.lab.architecture.initial ? `<div class="mt-6 p-4 bg-slate-50 rounded-lg">${pillarData.lab.architecture.initial}</div>` : ''}
-                        ${pillarData.lab.architecture && pillarData.lab.architecture.target ? `<div class="mt-6 p-4 bg-slate-50 rounded-lg">${pillarData.lab.architecture.target}</div>` : ''}
+                        ${pillarData.lab.architecture && pillarData.lab.architecture.initial ? `<div class="mt-6 p-4 bg-slate-50 rounded-lg architecture-diagram">${pillarData.lab.architecture.initial}</div>` : ''}
+                        ${pillarData.lab.architecture && pillarData.lab.architecture.target ? `<div class="mt-6 p-4 bg-slate-50 rounded-lg architecture-diagram">${pillarData.lab.architecture.target}</div>` : ''}
                         <h4 class="font-semibold text-lg mb-2 mt-4 text-slate-700">What will be done during this Lab:</h4>
                         <ul class="list-disc list-inside space-y-2 text-slate-600">
                             ${pillarData.lab.tasks.map(task => `<li>${task}</li>`).join('')}
